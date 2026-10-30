@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Corrector de Oraciones</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="./css/styles.css">
+  <link rel="stylesheet" href="./css/drag.css">
+  <link rel="stylesheet" href="./css/ejemplos.css">
+</head>
+
+<body>
+
+  <!-- ── SELECTOR DE MODO ─────────────────────────────
+       Fijo en esquina superior izquierda.
+       En móvil se convierte en fila horizontal.
+       ─────────────────────────────────────────────── -->
+  <nav class="modo-selector">
+    <button class="modo-btn activo" id="modoAnimacion" onclick="cambiarModo('animacion')">
+      <span class="modo-icono">🎬</span> Animación
+    </button>
+    <button class="modo-btn" id="modoRetro" onclick="cambiarModo('retro')">
+      <span class="modo-icono">🧩</span> Retroalimentación
+    </button>
+    <button class="modo-btn" id="modoEval" onclick="cambiarModo('eval')">
+      <span class="modo-icono">🏆</span> Evaluación
+    </button>
+  </nav>
+
+  <!-- ── HEADER ──────────────────────────────────────── -->
+  <header>
+    <h1 id="tituloApp">Corrector de Oraciones</h1>
+  </header>
+
+  <!-- ── MENSAJES DE ESTADO ──────────────────────────── -->
+  <div id="errorMsg">No se pudo conectar. ¿Está corriendo localhost:8000?</div>
+  <div id="estadoMsg">
+    <div class="spinner"></div>
+    <span id="estadoTexto">Procesando...</span>
+  </div>
+
+  <!-- ── INPUT ───────────────────────────────────────── -->
+  <div class="input-wrap" id="inputWrap">
+    <div class="input-card">
+      <div class="input-row">
+        <input id="inputTexto" type="text" placeholder="Escribe la oración desordenada..." autocomplete="off" />
+        <button id="btnEnviar" onclick="enviar()">Enviar</button>
+        <button id="btnEditar" onclick="editar()" title="Editar oración">
+          ✎ editar
+        </button>
+      </div>
+      <div class="ejemplos-row">
+        <!-- Ejemplos generados dinámicamente desde corpus.js -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ── ZONA PRINCIPAL ──────────────────────────────── -->
+  <div class="zona">
+
+    <!-- Panel superior — banco de palabras en todos los modos -->
+    <div class="panel" id="panelSuperior">
+      <div class="panel-label">
+        <span class="dot" style="background:var(--accent)"></span>
+        <span id="labelSuperior">Oración ingresada</span>
+      </div>
+      <div class="fichas" id="fichasOrig">
+        <span class="ph">Aquí aparecerá tu oración...</span>
+      </div>
+    </div>
+
+    <!-- Separador -->
+    <div class="sep">
+      <div class="sep-line"></div>
+      <div class="sep-icon">↓</div>
+      <div class="sep-line"></div>
+    </div>
+
+    <!-- Panel inferior — corrección en animación, construcción en drag -->
+    <div class="panel panel-resultado" id="panelResultado">
+      <div class="panel-label">
+        <span class="dot" id="dotInferior"></span>
+        <span id="labelInferior">Oración corregida</span>
+      </div>
+      <div class="fichas" id="fichasDest">
+        <span class="ph">Esperando resultado...</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── BOTÓN REVELAR (solo modo animación) ─────────── -->
+  <button id="btnRevelar" onclick="revelarResultado()">Ver oración corregida</button>
+
+  <!-- ── ACCIONES DRAG (modos retro y eval) ──────────── -->
+  <div class="acciones-drag" id="accionesDrag">
+    <button class="accion-btn" id="btnVerificar" onclick="verificar()" disabled title="Verificar">
+      <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+        stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20 6 9 17 4 12"></polyline>
+      </svg>
+      Verificar
+    </button>
+    <button class="accion-btn" id="btnLimpiar" onclick="limpiarPanelInferior()" title="limpiar">
+      <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+        stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 19V5"></path>
+        <polyline points="5 12 12 5 19 12"></polyline>
+      </svg>
+      Limpiar panel
+    </button>
+    <button class="accion-btn" id="btnReiniciarDrag" onclick="reiniciar()" title="reiniciar">
+      <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+        stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+        <polyline points="3 3 3 8 8 8"></polyline>
+      </svg>
+      Reiniciar
+    </button>
+  </div>
+
+  <!-- ── OPCIONES ALTERNATIVAS (solo modo animación) ─── -->
+  <div class="opciones-wrap" id="opcionesWrap">
+    <div class="opciones-titulo">Otras posibilidades</div>
+    <div class="opciones-lista" id="opcionesLista"></div>
+  </div>
+
+  <!-- ── BOTÓN + PANEL DE EJEMPLOS ── -->
+  <button class="ej-toggle" id="ejToggle" aria-expanded="false" aria-controls="ejDrawer">
+    <span>💡</span> Ejemplos
+  </button>
+  <div class="ej-overlay" id="ejOverlay"></div>
+  <aside class="ej-drawer" id="ejDrawer" aria-hidden="true">
+    <div class="ej-head">
+      <h2>Ejemplos</h2>
+      <button class="ej-close" id="ejClose" aria-label="Cerrar">✕</button>
+    </div>
+    <p class="ej-sub">Toca una oración para probarla</p>
+    <div class="ej-list" id="ejList"></div>
+  </aside>
+
+  <!-- ── SCRIPTS — orden obligatorio por dependencias ─── -->
+  <script src="./js/corpus.js"></script>
+  <script src="./js/dom.js"></script>
+  <script src="./js/api.js"></script>
+  <script src="./js/utils.js"></script>
+  <script src="./js/app.js"></script>
+  <script src="./js/drag-mode.js"></script>
+  <script src="./js/ui-controller.js"></script>
+  <script src="./js/ejemplos-drawer.js"></script>
+</body>
+
+</html>
